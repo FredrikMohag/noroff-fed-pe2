@@ -1,0 +1,48 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  /* Sprid ut innehållet */
+  align-items: center;
+  padding: 10px 50px;
+  background-color: #fff;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  /* Loggan till vänster, länkar till höger */
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 50px;
+  /* Anpassa storleken på loggan */
+  width: auto;
+}
+
+.navbar-list {
+  display: flex;
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-link {
+  text-decoration: none;
+  font-family: 'Caveat', cursive;
+  font-weight: 300;
+  font-size: 2.5rem;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.navbar-link:hover {
+  color: #0704DE;
+}

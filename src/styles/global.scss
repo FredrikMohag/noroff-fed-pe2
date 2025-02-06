@@ -1,0 +1,75 @@
+@use './components/Footer' as *;
+@use './components/Navbar' as *;
+@use './components/SearchBar' as *;
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+
+
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  font-family: 'Open Sans', sans-serif;
+}
+
+a {
+  color: black !important;
+  text-decoration: none;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+
+
+.footer {
+  text-align: right;
+  border-top: 1px solid #ddd;
+  font-size: 0.9rem;
+  font-family: 'Open Sans', sans-serif;
+  color: #555;
+  padding: 10px;
+  /* Lägg till lite padding så att foten inte är för tät mot kanten */
+  background-color: white;
+  /* Lägg till en bakgrundsfärg för att säkerställa att inget går bakom */
+}
+
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.background-image {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  height: 110vh;
+  width: 100vw;
+  background-image: url('/background.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+
+}
+
+.content {
+  flex-grow: 1;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
