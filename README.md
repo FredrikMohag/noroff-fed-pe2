@@ -1,2 +1,70 @@
-# noroff-fed-pe2
-Project Exam 2 - Holidaze
+project-root/
+├── public/                   # Allmänna tillgångar som inte hanteras av Webpack
+│   ├── index.html            # HTML-mallen
+│   ├── favicon.ico           # Favicon för sidan
+│   └── assets/               # Statisk media (bilder, ikoner, etc.)
+│       ├── images/
+│       ├── logos/
+│       └── fonts/
+├── src/                      # Huvudkällkod för projektet
+│   ├── components/           # Återanvändbara UI-komponenter
+│   │   ├── Navbar.jsx
+│   │   ├── Footer.jsx
+│   │   ├── Calendar.jsx
+│   │   └── SearchBar.jsx
+│   ├── features/             # Modulär uppdelning för större funktioner
+│   │   ├── auth/             # Hantering av autentisering
+│   │   │   ├── Login.jsx
+│   │   │   ├── LogoutButton.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── authSlice.js
+│   │   ├── bookings/         # Hantering av bokningar
+│   │   │   ├── BookingForm.jsx
+│   │   │   ├── BookingList.jsx
+│   │   │   └── bookingSlice.js
+│   │   ├── venues/           # Hantering av venues
+│   │   │   ├── VenueList.jsx
+│   │   │   ├── VenueDetails.jsx
+│   │   │   ├── VenueForm.jsx
+│   │   │   ├── VenueSearch.jsx
+│   │   │   └── venueSlice.js
+│   │   └── profile/          # Användarprofil
+│   │       ├── ProfileForm.jsx
+│   │       └── profileSlice.js
+│   ├── layouts/              # Layoutkomponenter
+│   │   ├── AdminLayout.jsx
+│   │   ├── MainLayout.jsx
+│   │   └── AuthLayout.jsx
+│   ├── pages/                # Sidkomponenter för routing
+│   │   ├── Home.jsx
+│   │   ├── Venues.jsx
+│   │   ├── VenueDetails.jsx
+│   │   ├── Profile.jsx
+│   │   ├── Dashboard.jsx
+│   │   └── NotFound.jsx
+│   ├── services/             # API-tjänster och datalogik
+│   │   ├── apiClient.js      # Grundläggande API-klient
+│   │   ├── authService.js    # API-anrop för autentisering
+│   │   ├── bookingService.js # API-anrop för bokningar
+│   │   └── venueApi.js       # API-anrop för venues
+│   ├── styles/               # Globala och modulära stilmallar
+│   │   ├── variables.scss    # Anpassade SCSS-variabler för Bootstrap
+│   │   ├── mixins.scss       # Återanvändbara SCSS-mixins
+│   │   ├── global.scss       # Globala anpassningar av Bootstrap-stilar
+│   │   └── components/       # Modulbaserade stilar
+│   │       ├── Navbar.scss
+│   │       ├── Footer.scss
+│   │       └── SearchBar.scss
+│   ├── utils/                # Hjälpfunktioner och valideringar
+│   │   ├── formValidators.js # Formulärvalideringar
+│   │   ├── dateHelpers.js    # Datumhantering
+│   │   └── apiHelpers.js     # Generella API-hjälpfunktioner
+│   ├── App.jsx               # Huvudapplikationskomponenten med routing
+│   ├── index.js              # Startpunkt för React (renderar App.jsx)
+│   ├── store.js              # Redux Store-konfiguration
+│   └── routes.js             # Definiera applikationens routing
+├── .env                      # Miljövariabler
+├── .gitignore                # Ignorera specifika filer för Git
+├── package.json              # Projektets beroenden och skript
+├── README.md                 # Projektbeskrivning och dokumentation
+└── bootstrap.custom.scss     # Bootstrap-konfiguration för anpassning
