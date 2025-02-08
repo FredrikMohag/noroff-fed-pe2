@@ -1,7 +1,7 @@
 import React from "react";
 import Layout from "../components/Layout";
 import SearchBar from "../components/SearchBar";
-import Venues from "../venues/VenueList.jsx";
+import Venues from "../venues/VenueCard.jsx";
 
 const Home = () => {
   return (
