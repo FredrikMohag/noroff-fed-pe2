@@ -4,7 +4,8 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
-import VenueDetails from "./pages/VenueDetails";
+import VenueDetails from "./pages/Venue";
+import Venues from "./venues/VenueCard";
 
 function App() {
   return (
@@ -13,7 +14,8 @@ function App() {
       <Route path="/login" element={<Auth />} />
       <Route path="/register" element={<Auth />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/venue/:id" element={<VenueDetails />} />
+      <Route path="/venues" element={<Venues />} />
+      <Route path="/venues/:id" element={<VenueDetails />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
