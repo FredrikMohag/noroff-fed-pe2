@@ -12,7 +12,7 @@ function Navbar() {
         {/* Navigationslänkar */}
         <ul className="navbar-list">
 
-          <li><Link to="/profile" className="navbar-link">Profile</Link></li>
+          <li><Link to="/login" className="navbar-link">Profile</Link></li>
         </ul>
       </div>
     </nav>
