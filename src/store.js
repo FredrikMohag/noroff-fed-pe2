@@ -1,11 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./features/auth/authSlice";
-import profileReducer from "./features/profile/profileSlice";
 
-export const store = configureStore({
+const userFromStorage = localStorage.getItem("user")
+  ? JSON.parse(localStorage.getItem("user"))
+  : null;
+
+const store = configureStore({
   reducer: {
     auth: authReducer,
-    profile: profileReducer,
+  },
+  preloadedState: {
+    auth: { user: userFromStorage }, // Ladda användaren från localStorage vid start
   },
 });
 
