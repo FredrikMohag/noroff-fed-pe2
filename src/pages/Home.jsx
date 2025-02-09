@@ -6,6 +6,7 @@ import Venues from "../venues/VenueCard.jsx";
 const Home = () => {
   return (
     <Layout>
+      <div className="background-image" />
       <SearchBar />
       <Venues />
     </Layout>
