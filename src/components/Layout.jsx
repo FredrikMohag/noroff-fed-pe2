@@ -8,8 +8,7 @@ const Layout = ({ children }) => {
     <div className="layout">
       <Navbar />
 
-      {/* Bakgrundsbild */}
-      <div className="background-image" />
+
 
       <main className="content">
         {children}
