@@ -1,13 +1,15 @@
 // src/pages/Profile.jsx
 import React from "react";
 import Layout from "../components/Layout";
+import ProfileDetails from "../features/profile/ProfileDetails";
 
 function Profile() {
   return (
     <Layout>
-      <h1>Your Profile</h1>
 
-      {/* Lägg till profilinformation */}
+      <div className="background-image" />
+      <ProfileDetails />
+
     </Layout>
   );
 }
