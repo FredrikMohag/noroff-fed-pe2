@@ -1,128 +1,114 @@
-import React, { useState } from "react";
+import { useFormik } from "formik";
+import React from "react";
 import { useDispatch } from 'react-redux';
 import { useNavigate } from "react-router-dom";
+import * as Yup from "yup";
 import { registerUser } from '../auth/authSlice';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    avatarUrl: "",
-    isVenueManager: false,
-  });
-
-  const [error, setError] = useState({});
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  // Yup schema för validering
+  const validationSchema = Yup.object({
+    name: Yup.string().required("Username is required"),
+    email: Yup.string()
+      .email("Invalid email address")
+      .required("Email is required")
+      .matches(/@stud\.noroff\.no$/, "Email must be from @stud.noroff.no"),
+    password: Yup.string()
+      .min(8, "Password must be at least 8 characters long")
+      .required("Password is required"),
+    avatarUrl: Yup.string().url("Invalid URL").optional(),
+  });
 
-    // Logga ändringarna av "isVenueManager"
-    if (name === "isVenueManager") {
-      console.log("Register as a venue manager changed to:", checked);
-    }
-
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  const validateForm = () => {
-    let errors = {};
-
-    // Validation for email
-    if (!formData.email.includes("@stud.noroff.no")) {
-      errors.email = "Email must be from @stud.noroff.no";
-    }
-
-    // Validation for password
-    if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters long";
-    }
-
-    return errors;
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError({}); // Återställ felmeddelanden
-
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setError(validationErrors);
-      return; // Stoppa om det finns valideringsfel
-    }
-
-    try {
-      // Försök att registrera användaren
-      await dispatch(registerUser(formData)).unwrap();
-      navigate("/profile"); // Om registreringen lyckas, navigera till profilsidan
-    } catch (error) {
-      console.error("Error response:", error.response?.data);
-      if (error?.response?.data?.message === "Username already taken") {
-        setError({ username: "Username is already taken. Please choose another one." });
-      } else if (error?.response?.data?.message === "Email already exists") {
-        setError({ email: "Email is already in use. Please try another one." });
-      } else {
-        setError({ general: "Registration failed. Please try again." });
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      avatarUrl: "",
+      isVenueManager: false,
+    },
+    validationSchema, // Lägg till validation schema
+    onSubmit: async (values) => {
+      try {
+        await dispatch(registerUser(values)).unwrap();
+        navigate("/profile");
+      } catch (error) {
+        console.error("Error response:", error.response?.data);
       }
-    }
-  };
-
+    },
+  });
 
   return (
-    <form onSubmit={handleRegister} className="auth-form">
+    <form onSubmit={formik.handleSubmit} className="auth-form">
       <h2>Register</h2>
 
-      {error.general && <p className="error">{error.general}</p>}
+      {formik.errors.general && <p className="error">{formik.errors.general}</p>}
 
-      <input
-        type="text"
-        name="name"
-        placeholder="Username"
-        value={formData.name}
-        onChange={handleChange}
-        required
-      />
-      {error.username && <p className="error">{error.username}</p>} {/* Error message for username */}
+      <div>
+        <input
+          type="text"
+          name="name"
+          placeholder="Username"
+          value={formik.values.name}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+        {formik.touched.name && formik.errors.name && (
+          <p className="error">{formik.errors.name}</p>
+        )}
+      </div>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={formData.email}
-        onChange={handleChange}
-        required
-      />
-      {error.email && <p className="error">{error.email}</p>} {/* Error message for email */}
+      <div>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+        {formik.touched.email && formik.errors.email && (
+          <p className="error">{formik.errors.email}</p>
+        )}
+      </div>
 
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        value={formData.password}
-        onChange={handleChange}
-        required
-      />
-      {error.password && <p className="error">{error.password}</p>} {/* Error message for password */}
+      <div>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formik.values.password}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+        {formik.touched.password && formik.errors.password && (
+          <p className="error">{formik.errors.password}</p>
+        )}
+      </div>
 
-      <input
-        type="text"
-        name="avatarUrl"
-        placeholder="Avatar URL"
-        value={formData.avatarUrl}
-        onChange={handleChange}
-      />
+      <div>
+        <input
+          type="text"
+          name="avatarUrl"
+          placeholder="Avatar URL"
+          value={formik.values.avatarUrl}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+        {formik.touched.avatarUrl && formik.errors.avatarUrl && (
+          <p className="error">{formik.errors.avatarUrl}</p>
+        )}
+      </div>
 
       <label>
         <input
           type="checkbox"
           name="isVenueManager"
-          checked={formData.isVenueManager}
-          onChange={handleChange}
+          checked={formik.values.isVenueManager}
+          onChange={formik.handleChange}
         />
         Register as a venue manager
       </label>
