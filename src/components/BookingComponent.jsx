@@ -1,7 +1,7 @@
 import axios from "axios";
 import { addDays, differenceInDays } from "date-fns";
 import React, { useEffect, useState } from "react";
-import { Button, Card, Form, InputGroup } from "react-bootstrap";
+import { Button, Card, Form, InputGroup, Modal } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
@@ -17,34 +17,33 @@ const BookingComponent = ({ venueId }) => {
   const [pricePerNight, setPricePerNight] = useState(100);
   const [venue, setVenue] = useState(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Show confirmation modal
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // Show success modal
   const vatRate = 0.25;
 
-  const user = useSelector((state) => state.auth.user); // Hämtar användaren från Redux
-  const token = user?.accessToken; // Hämtar access token
+  const user = useSelector((state) => state.auth.user); // Get user from Redux state
+  const token = user?.accessToken; // Access token for user authentication
   const navigate = useNavigate();
 
-  console.log("User in Redux: ", user); // För att kontrollera om användaren finns
-  console.log("Token: ", token); // För att kontrollera om token finns
-
   useEffect(() => {
-    console.log(`Fetching venue with ID: ${venueId}`); // För att se vilken venue vi hämtar
+    console.log(`Fetching venue with ID: ${venueId}`);
     axios
       .get(`${API_HOLIDAZE_URL}/venues/${venueId}`)
       .then((res) => {
-        console.log("Venue data: ", res.data); // För att se om vi får korrekt data från API
+        console.log("Venue data:", res.data);
         setVenue(res.data);
-        setPricePerNight(res.data.price);
+        setPricePerNight(res.data.price); // Assuming price is part of venue data
       })
-      .catch((err) => console.error("Error fetching venue:", err));
+      .catch((err) => {
+        console.error("Error fetching venue:", err);
+      });
   }, [venueId]);
 
-  const handleBooking = () => {
-    console.log("Handling booking...");
 
-    // Kontrollera om användaren är inloggad och har token
-    if (!user || !user.accessToken) {
+  const handleBooking = () => {
+    if (!user || !token) {
       console.log("User or token not found. Redirecting to login.");
-      navigate("/login"); // Om inte, skicka användaren till login-sidan
+      navigate("/login"); // Redirect to login if not authenticated
       return;
     }
 
@@ -55,19 +54,38 @@ const BookingComponent = ({ venueId }) => {
       venueId,
     };
 
-    console.log("Booking data: ", bookingData); // För att se vad vi skickar med i bokningen
+    console.log("Booking data:", bookingData);
+
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmBooking = () => {
+    if (!user || !token) {
+      console.log("User or token not found. Redirecting to login.");
+      navigate("/login"); // Redirect to login if not authenticated
+      return;
+    }
+
+    const bookingData = {
+      dateFrom: startDate.toISOString(),
+      dateTo: endDate.toISOString(),
+      guests,
+      venueId,
+    };
 
     axios
       .post(`${API_HOLIDAZE_URL}/bookings`, bookingData, {
         headers: {
-          Authorization: `Bearer ${user.accessToken}`, // Skicka token här
+          Authorization: `Bearer ${token}`,
           "X-Noroff-API-Key": API_KEY,
           "Content-Type": "application/json",
         },
       })
       .then(() => {
         console.log("Booking successful!");
-        alert("Booking successful!");
+        setShowConfirmModal(false); // Close the confirm modal
+        setShowSuccessModal(true); // Show the success modal
       })
       .catch((err) => {
         console.error("Booking failed:", err.response?.data || err.message);
@@ -75,8 +93,13 @@ const BookingComponent = ({ venueId }) => {
       });
   };
 
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    navigate("/profile"); // Navigate to profile page
+  };
 
-  const nights = differenceInDays(endDate, startDate);
+  // Calculate nights, VAT, and total amount
+  const nights = Math.abs(differenceInDays(startDate, endDate));
   const vatAmount = (nights * pricePerNight * vatRate).toFixed(2);
   const totalAmount = (nights * pricePerNight * (1 + vatRate)).toFixed(2);
 
@@ -92,6 +115,7 @@ const BookingComponent = ({ venueId }) => {
         </div>
       )}
 
+      {/* Date picker */}
       <Form.Group className="mb-3">
         <Form.Label>Select dates</Form.Label>
         <InputGroup>
@@ -116,8 +140,15 @@ const BookingComponent = ({ venueId }) => {
             <DatePicker
               selected={startDate}
               onChange={(dates) => {
-                setStartDate(dates?.[0] || new Date());
-                setEndDate(dates?.[1] || addDays(new Date(), 1));
+                const [start, end] = dates || [new Date(), addDays(new Date(), 1)];
+                if (start <= end) {
+                  setStartDate(start);
+                  setEndDate(end);
+                } else {
+                  // Adjust the dates if startDate is after endDate
+                  setStartDate(start);
+                  setEndDate(addDays(start, 1)); // Default to the next day if the endDate is before startDate
+                }
               }}
               startDate={startDate}
               endDate={endDate}
@@ -130,17 +161,19 @@ const BookingComponent = ({ venueId }) => {
         )}
       </Form.Group>
 
+      {/* Number of guests input */}
       <Form.Group className="mb-3">
         <Form.Label>Number of Guests</Form.Label>
         <Form.Control
           type="number"
           min="1"
-          max={venue?.maxGuests || 10}
+          max={venue?.maxGuests || 10} // Ensure maxGuests is used from venue data
           value={guests}
           onChange={(e) => setGuests(Number(e.target.value))}
         />
       </Form.Group>
 
+      {/* Price and VAT summary */}
       <div className="d-flex justify-content-between">
         <p className="mb-1">Nights</p>
         <p className="mb-1">{nights}</p>
@@ -154,9 +187,52 @@ const BookingComponent = ({ venueId }) => {
         <h4>${totalAmount}</h4>
       </div>
 
+      {/* Booking Button */}
       <Button variant="primary" className="mt-3 w-100" onClick={handleBooking}>
         {user ? "Book" : "Log in"}
       </Button>
+
+      {/* Confirmation Modal */}
+      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Booking</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Please confirm your booking at {venue?.name} for {guests} guest{guests > 1 ? 's' : ''} from {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+            Cancel booking
+          </Button>
+          <Button variant="primary" onClick={handleConfirmBooking}>
+            Book now
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal show={showSuccessModal} onHide={handleCloseSuccessModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Booking Successful!</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {venue ? (
+            <p>Congratulations! Your booking at {venue.name} is confirmed.</p>
+          ) : (
+            <p>Congratulations! Your booking is confirmed.</p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseSuccessModal}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleCloseSuccessModal}>
+            View bookings
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Card>
   );
 };
