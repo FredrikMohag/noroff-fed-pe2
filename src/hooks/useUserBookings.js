@@ -6,33 +6,30 @@ const useUserBookings = (token, user, navigate) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/profile");
-    } else if (token) {
-      fetchBookings(token, { _customer: true })
-        .then((response) => {
-          // Om response har en "data"-egenskap används den, annars antar vi att response är själva arrayen
-          const allBookings = response.data || response;
+    const getBookings = async () => {
+      if (!user || !token) {
+        console.log("Ingen användare eller token hittades. Avbryter...");
+        setLoading(false);
+        return;
+      }
 
-          // 🔥 Filtrera bort bokningar som inte tillhör den inloggade användaren
-          const currentUserBookings = allBookings.filter(
-            (booking) => booking.customer.email === user.email
-          );
+      try {
+        console.log("Hämtar bokningar från API...");
+        const bookings = await fetchBookings(token, { userId: user.id }); // Skicka relevant parameter här om det behövs
 
-          console.log("Filtrerade bokningar för current user:", currentUserBookings);
-          setUserBookings(currentUserBookings);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching bookings:", error);
-          setLoading(false);
-        });
-    }
-  }, [user, token, navigate]);
+        console.log("📅 Bokningar hämtade:", bookings);
+        setUserBookings(bookings);
+      } catch (error) {
+        console.error("Error fetching user bookings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    getBookings(); // Kör funktionen här
+  }, [user, token]); // Körs om user eller token ändras
 
   return { userBookings, loading };
-
 };
 
 export default useUserBookings;
