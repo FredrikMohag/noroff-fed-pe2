@@ -1,30 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logoutUser } from "../auth/authSlice";
+import useUserStore from "../../store"; // ✅ Importera Zustand store
 import Login from "./Login";
 import Register from "./Register";
 
 const AuthContainer = () => {
   const [showRegister, setShowRegister] = useState(false);
-  const dispatch = useDispatch();
+  const user = useUserStore((state) => state.user); // ✅ Hämta användaren
+  const logout = useUserStore((state) => state.logout); // ✅ Hämta logout-funktion
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
 
-  // Om användaren redan är inloggad, navigera till profilsidan
+  // ✅ Om användaren redan är inloggad, skicka till "/profile"
   useEffect(() => {
     if (user) {
       navigate("/profile");
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    console.log("showRegister state:", showRegister);
-  }, [showRegister]);
-
   const handleLogout = () => {
-    dispatch(logoutUser());
-    navigate("/"); // Omdirigera till startsidan eller en annan sida
+    logout();
+    navigate("/"); // ✅ Omdirigera till startsidan
   };
 
   return (
