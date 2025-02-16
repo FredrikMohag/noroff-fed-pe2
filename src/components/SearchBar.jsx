@@ -1,37 +1,43 @@
 import debounce from "lodash.debounce";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { API_BOOKINGS } from "../constants";
+import { API_KEY } from "../constants";
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredVenues, setFilteredVenues] = useState([]);
   const searchRef = useRef(null);
 
-  // Funktion för att hämta venues baserat på sökterm
+  const BASE_API_URL = 'https://v2.api.noroff.dev/holidaze'; // Correct base URL
+
   const fetchFilteredVenues = async (query) => {
     if (!query) {
       setFilteredVenues([]);
       return;
     }
 
-    const url = `${API_BOOKINGS}/venues/search?q=${query}`;
+    const url = `${BASE_API_URL}/venues/search?q=${query}`; // Corrected URL
+
     console.log("Fetching from URL:", url);
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`, // Add your API_KEY here if required
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch venues: ${response.statusText}`);
       }
+
       const result = await response.json();
-      setFilteredVenues(result.data.slice(0, 4)); // Begränsa till 4 resultat
+      setFilteredVenues(result.data.slice(0, 4)); // Limit to 4 results
     } catch (error) {
       console.error("Error fetching venues:", error);
       setFilteredVenues([]);
     }
   };
-
-
   // Debounced version av fetchFilteredVenues
   const debouncedFetchFilteredVenues = debounce((query) => {
     fetchFilteredVenues(query);
@@ -57,7 +63,6 @@ const SearchBar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
 
   return (
     <div className="search-bar-container">
