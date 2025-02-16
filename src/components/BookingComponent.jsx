@@ -1,70 +1,51 @@
-import axios from "axios";
-import { addDays, differenceInDays } from "date-fns";
 import React, { useEffect, useState } from "react";
 import { Button, Card, Form, InputGroup, Modal } from "react-bootstrap";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { API_BOOKINGS, API_KEY } from "../constants";
-import useStore from "../store"; // Import the Zustand store
+import { createBooking } from "../components/booking/bookingService"; // Importera vår nya service
+import useStore from "../store";
 import "../styles/global.scss";
+import CalendarComponent from "./CalendarComponent";
 
 const BookingComponent = ({ venueId }) => {
   const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(addDays(new Date(), 1));
+  const [endDate, setEndDate] = useState(new Date());
   const [guests, setGuests] = useState(1);
   const [pricePerNight, setPricePerNight] = useState(100);
   const [venue, setVenue] = useState(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Show confirmation modal
-  const [showSuccessModal, setShowSuccessModal] = useState(false); // Show success modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const vatRate = 0.25;
 
-  // Fetch the user data from Zustand store
   const user = useStore((state) => state.user);
-  const accessToken = user?.accessToken || null;  // Make sure accessToken is correctly retrieved
-
+  const accessToken = user?.accessToken || null;
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log(`Fetching venue with ID: ${venueId}`);
+    // Här hämtar vi platsens detaljer från API
     axios
       .get(`${API_BOOKINGS}/venues/${venueId}`)
       .then((res) => {
-
         setVenue(res.data);
-        setPricePerNight(res.data.price); // Assuming price is part of venue data
+        setPricePerNight(res.data.price);
       })
-      .catch((err) => {
-        console.error("Error fetching venue:", err);
-      });
+      .catch((err) => console.error("❌ Error fetching venue:", err));
   }, [venueId]);
 
   const handleBooking = () => {
+    console.log("🔹 Handling booking...");
     if (!user || !accessToken) {
-      console.log("User or accessToken not found. Redirecting to login.");
-      navigate("/login"); // Redirect to login if not authenticated
+      navigate("/login");
       return;
     }
-
-    const bookingData = {
-      dateFrom: startDate.toISOString(),
-      dateTo: endDate.toISOString(),
-      guests,
-      venueId,
-    };
-
-    console.log("Booking data:", bookingData);
-
-    // Show confirmation modal
     setShowConfirmModal(true);
+    console.log("🔹 Show confirm modal:", showConfirmModal); // Kontrollera om tillståndet ändras
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!user || !accessToken) {
-      console.log("User or accessToken not found. Redirecting to login.");
-      navigate("/login"); // Redirect to login if not authenticated
+      navigate("/login");
       return;
     }
 
@@ -73,33 +54,26 @@ const BookingComponent = ({ venueId }) => {
       dateTo: endDate.toISOString(),
       guests,
       venueId,
+      venueName: venue?.name,
+      userEmail: user.email,
     };
 
-    axios
-      .post(`${API_BOOKINGS}/bookings`, bookingData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "X-Noroff-API-Key": API_KEY,
-          "Content-Type": "application/json",
-        },
-      })
-      .then(() => {
-        console.log("Booking successful!");
-        setShowConfirmModal(false); // Close the confirm modal
-        setShowSuccessModal(true); // Show the success modal
-      })
-      .catch((err) => {
-        console.error("Booking failed:", err.response?.data || err.message);
-        alert("Booking failed, please check your credentials or try again.");
-      });
+    try {
+      const response = await createBooking(accessToken, bookingData);  // Använder vår nya service
+      useStore.getState().addBooking(response.data); // Lägg till bokningen i store
+      setShowConfirmModal(false);  // Stänger bekräftelsemodalen
+      setShowSuccessModal(true);   // Öppnar successmodalen
+    } catch (err) {
+      console.error("❌ Bokning misslyckades:", err.response?.data || err.message);
+      alert("Bokningen misslyckades, vänligen försök igen.");
+    }
   };
 
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate("/profile"); // Navigate to profile page
+    navigate("/profile");
   };
 
-  // Calculate nights, VAT, and total amount
   const nights = Math.abs(differenceInDays(startDate, endDate));
   const vatAmount = (nights * pricePerNight * vatRate).toFixed(2);
   const totalAmount = (nights * pricePerNight * (1 + vatRate)).toFixed(2);
@@ -128,37 +102,18 @@ const BookingComponent = ({ venueId }) => {
           </InputGroup.Text>
           <Form.Control
             readOnly
-            value={
-              startDate && endDate
-                ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-                : "Select date"
-            }
+            value={startDate && endDate ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}` : "Select date"}
           />
         </InputGroup>
 
         {calendarVisible && (
-          <div className="mt-3">
-            <DatePicker
-              selected={startDate}
-              onChange={(dates) => {
-                const [start, end] = dates || [new Date(), addDays(new Date(), 1)];
-                if (start <= end) {
-                  setStartDate(start);
-                  setEndDate(end);
-                } else {
-                  // Adjust the dates if startDate is after endDate
-                  setStartDate(start);
-                  setEndDate(addDays(start, 1)); // Default to the next day if the endDate is before startDate
-                }
-              }}
-              startDate={startDate}
-              endDate={endDate}
-              selectsRange
-              minDate={new Date()}
-              inline
-              calendarClassName="custom-calendar"
-            />
-          </div>
+          <CalendarComponent
+            venueId={venueId}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+          />
         )}
       </Form.Group>
 
@@ -168,7 +123,7 @@ const BookingComponent = ({ venueId }) => {
         <Form.Control
           type="number"
           min="1"
-          max={venue?.maxGuests || 10} // Ensure maxGuests is used from venue data
+          max={venue?.maxGuests || 10}
           value={guests}
           onChange={(e) => setGuests(Number(e.target.value))}
         />
@@ -216,21 +171,14 @@ const BookingComponent = ({ venueId }) => {
       {/* Success Modal */}
       <Modal show={showSuccessModal} onHide={handleCloseSuccessModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Booking Successful!</Modal.Title>
+          <Modal.Title>Booking Success</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {venue ? (
-            <p>Congratulations! Your booking at {venue.name} is confirmed.</p>
-          ) : (
-            <p>Congratulations! Your booking is confirmed.</p>
-          )}
+          <p>Your booking at {venue?.name} has been successfully confirmed for {guests} guest{guests > 1 ? 's' : ''} from {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}.</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseSuccessModal}>
-            Close
-          </Button>
           <Button variant="primary" onClick={handleCloseSuccessModal}>
-            View bookings
+            Go to Profile
           </Button>
         </Modal.Footer>
       </Modal>
