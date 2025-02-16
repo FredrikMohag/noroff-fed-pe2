@@ -1,7 +1,7 @@
 import debounce from "lodash.debounce";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { API_HOLIDAZE_URL } from "../constants";
+import { API_BOOKINGS } from "../constants";
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,10 +15,13 @@ const SearchBar = () => {
       return;
     }
 
+    const url = `${API_BOOKINGS}/venues/search?q=${query}`;
+    console.log("Fetching from URL:", url);
+
     try {
-      const response = await fetch(`${API_HOLIDAZE_URL}/venues/search?q=${query}`);
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error("Failed to fetch venues");
+        throw new Error(`Failed to fetch venues: ${response.statusText}`);
       }
       const result = await response.json();
       setFilteredVenues(result.data.slice(0, 4)); // Begränsa till 4 resultat
@@ -27,6 +30,7 @@ const SearchBar = () => {
       setFilteredVenues([]);
     }
   };
+
 
   // Debounced version av fetchFilteredVenues
   const debouncedFetchFilteredVenues = debounce((query) => {
