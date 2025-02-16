@@ -58,97 +58,99 @@ const ProfileDetails = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="profile-container">
-        <div className="profile-header">
-          <div className="avatar-container">
-            {avatar ? (
-              <img src={avatar} alt="Profile" className="avatar" />
-            ) : (
-              <div className="avatar-placeholder" />
-            )}
-            <label htmlFor="avatarUpload" className="avatar-upload-label">
-              <FaEdit />
-            </label>
-            <input
-              type="file"
-              id="avatarUpload"
-              className="avatar-upload-input"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              style={{ display: "none" }}
-            />
+    <div className="auth-background">
+      <div className="auth-container">
+        <div className="profile-container">
+          <div className="profile-header">
+            <div className="avatar-container">
+              {avatar ? (
+                <img src={avatar} alt="Profile" className="avatar" />
+              ) : (
+                <div className="avatar-placeholder" />
+              )}
+              <label htmlFor="avatarUpload" className="avatar-upload-label">
+                <FaEdit />
+              </label>
+              <input
+                type="file"
+                id="avatarUpload"
+                className="avatar-upload-input"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                style={{ display: "none" }}
+              />
+            </div>
+
+            <div className="user-info">
+              <p><strong>Username:</strong> {user?.name || "N/A"}</p>
+              <p><strong>Email:</strong> {user?.email || "N/A"}</p>
+              <p><strong>Role:</strong> {user?.venueManager ? "Venue Manager" : "Regular User"}</p>
+            </div>
           </div>
 
-          <div className="user-info">
-            <p><strong>Username:</strong> {user?.name || "N/A"}</p>
-            <p><strong>Email:</strong> {user?.email || "N/A"}</p>
-            <p><strong>Role:</strong> {user?.venueManager ? "Venue Manager" : "Regular User"}</p>
-          </div>
-        </div>
-
-        <div className="profile-tabs">
-          <button
-            onClick={() => setActiveTab("bookings")}
-            className={`profile-tab ${activeTab === "bookings" ? "active" : ""}`}
-          >
-            My Bookings
-          </button>
-
-          {user?.venueManager && (
+          <div className="profile-tabs">
             <button
-              onClick={() => setActiveTab("venues")}
-              className={`profile-tab ${activeTab === "venues" ? "active" : ""}`}
+              onClick={() => setActiveTab("bookings")}
+              className={`profile-tab ${activeTab === "bookings" ? "active" : ""}`}
             >
-              My Venues
+              My Bookings
             </button>
-          )}
-        </div>
 
-        <div className="profile-content">
-          {activeTab === "bookings" ? (
-            loading ? (
-              <p>Loading bookings...</p>
-            ) : filteredBookings?.length > 0 ? ( // ⬅️ Bytt ut userBookings till filteredBookings
-              <div className="bookings-container">
-                {filteredBookings.map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} />
-                ))}
-              </div>
+            {user?.venueManager && (
+              <button
+                onClick={() => setActiveTab("venues")}
+                className={`profile-tab ${activeTab === "venues" ? "active" : ""}`}
+              >
+                My Venues
+              </button>
+            )}
+          </div>
+
+          <div className="profile-content">
+            {activeTab === "bookings" ? (
+              loading ? (
+                <p>Loading bookings...</p>
+              ) : filteredBookings?.length > 0 ? ( // ⬅️ Bytt ut userBookings till filteredBookings
+                <div className="bookings-container">
+                  {filteredBookings.map((booking) => (
+                    <BookingCard key={booking.id} booking={booking} />
+                  ))}
+                </div>
+              ) : (
+                <p>No bookings yet.</p>
+              )
             ) : (
-              <p>No bookings yet.</p>
-            )
-          ) : (
-            user?.venueManager && (
-              <div>
-                {user?.data?.venues?.length > 0 ? (
-                  <ul>
-                    {user.data.venues.map((venue, index) => (
-                      <li key={index}>{venue.name || "Unnamed Venue"}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No venues yet.</p>
-                )}
-              </div>
-            )
-          )}
-        </div>
+              user?.venueManager && (
+                <div>
+                  {user?.data?.venues?.length > 0 ? (
+                    <ul>
+                      {user.data.venues.map((venue, index) => (
+                        <li key={index}>{venue.name || "Unnamed Venue"}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No venues yet.</p>
+                  )}
+                </div>
+              )
+            )}
+          </div>
 
-        <div className="profile-buttons">
-          {user?.venueManager && (
-            <button className="btn" onClick={() => setShowCreateVenue(true)}>
-              Create Venue
+          <div className="profile-buttons">
+            {user?.venueManager && (
+              <button className="btn" onClick={() => setShowCreateVenue(true)}>
+                Create Venue
+              </button>
+            )}
+            <button className="btn logout" onClick={handleLogout}>
+              Log Out
             </button>
-          )}
-          <button className="btn logout" onClick={handleLogout}>
-            Log Out
-          </button>
-        </div>
+          </div>
 
-        {showCreateVenue && (
-          <CreateVenueForm onClose={() => setShowCreateVenue(false)} />
-        )}
+          {showCreateVenue && (
+            <CreateVenueForm onClose={() => setShowCreateVenue(false)} />
+          )}
+        </div>
       </div>
     </div>
   );
