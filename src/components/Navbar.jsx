@@ -1,9 +1,9 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import useUserStore from "../store"; // Importera Zustand-store
 
 function Navbar() {
-  const user = useSelector((state) => state.auth.user); // Kolla om användaren är inloggad
+  const user = useUserStore((state) => state.user); // Hämta user från Zustand
 
   return (
     <nav className="navbar">
