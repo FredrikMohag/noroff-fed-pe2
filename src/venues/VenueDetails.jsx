@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaBed, FaCar, FaDog, FaDollarSign, FaLocationArrow, FaStar, FaUsers, FaWifi } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import BookingComponent from "../components/BookingComponent";
-import { API_HOLIDAZE_URL } from "../constants";
+import { API_KEY, API_VENUES, BASE_API_URL } from "../constants";
 
 const VenueFetch = () => {
   const { id } = useParams();
@@ -13,12 +13,21 @@ const VenueFetch = () => {
   useEffect(() => {
     const fetchVenue = async () => {
       try {
-        const response = await fetch(`${API_HOLIDAZE_URL}/venues/${id}`);
+        const response = await fetch(`${BASE_API_URL}${API_VENUES}/${id}`, {
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        });
+
         if (!response.ok) {
           throw new Error("Failed to fetch venue details");
         }
+
         const data = await response.json();
-        setVenue(data.data);
+        console.log("Fetched Venue Data:", data); // Debugging
+
+        setVenue(data.data || data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -43,10 +52,9 @@ const VenueFetch = () => {
   return (
     <div className="container mt-5">
       <div className="row">
-        {/* Bild över hela bredden */}
         <div className="col-md-12 text-center mb-4">
-          <div style={{ width: "100%", maxHeight: "600px", backgroundColor: venue.media[0]?.url ? "transparent" : "#e0e0e0" }}>
-            {venue.media[0]?.url ? (
+          <div style={{ width: "100%", maxHeight: "600px", backgroundColor: venue.media?.[0]?.url ? "transparent" : "#e0e0e0" }}>
+            {venue.media?.[0]?.url ? (
               <img
                 src={venue.media[0]?.url}
                 className="img-fluid rounded"
@@ -62,23 +70,18 @@ const VenueFetch = () => {
         </div>
       </div>
 
-      {/* Två kolumner: Beskrivning (8) | Bokning (4) */}
       <div className="row">
-        {/* Vänster sektion (8 kolumner) */}
         <div className="col-md-8">
-          {/* Stad och land */}
           <div className="d-flex align-items-center mb-3">
             <FaLocationArrow className="me-3" />
-            <p className="mb-0">{venue.location.city}, {venue.location.country}</p>
+            <p className="mb-0">{venue.location?.city || "Unknown City"}, {venue.location?.country || "Unknown Country"}</p>
           </div>
 
-          {/* Namn och betyg */}
           <div className="d-flex align-items-center mb-4">
             <h1 className="mb-0 me-3">{venue.name}</h1>
             {renderStars(venue.rating)}
           </div>
 
-          {/* Pris, gäster och faciliteter */}
           <div className="d-flex align-items-center mb-3">
             <FaDollarSign className="me-3" style={{ color: "#2ecc71" }} />
             <p className="mb-0">${venue.price} / night</p>
@@ -88,36 +91,31 @@ const VenueFetch = () => {
             <p className="mb-0">{venue.maxGuests} guests</p>
           </div>
 
-          {/* Faciliteter */}
-          {venue.meta.wifi && <div className="d-flex align-items-center mb-3"><FaWifi className="me-3" style={{ color: "#3498db" }} /><span>WiFi</span></div>}
-          {venue.meta.parking && <div className="d-flex align-items-center mb-3"><FaCar className="me-3" style={{ color: "#2ecc71" }} /><span>Parking</span></div>}
-          {venue.meta.breakfast && <div className="d-flex align-items-center mb-3"><FaBed className="me-3" style={{ color: "#f39c12" }} /><span>Breakfast</span></div>}
-          {venue.meta.pets && <div className="d-flex align-items-center mb-3"><FaDog className="me-3" style={{ color: "#e74c3c" }} /><span>Pets Allowed</span></div>}
+          {venue.meta?.wifi && <div className="d-flex align-items-center mb-3"><FaWifi className="me-3" style={{ color: "#3498db" }} /><span>WiFi</span></div>}
+          {venue.meta?.parking && <div className="d-flex align-items-center mb-3"><FaCar className="me-3" style={{ color: "#2ecc71" }} /><span>Parking</span></div>}
+          {venue.meta?.breakfast && <div className="d-flex align-items-center mb-3"><FaBed className="me-3" style={{ color: "#f39c12" }} /><span>Breakfast</span></div>}
+          {venue.meta?.pets && <div className="d-flex align-items-center mb-3"><FaDog className="me-3" style={{ color: "#e74c3c" }} /><span>Pets Allowed</span></div>}
 
-          {/* Beskrivning */}
           <div className="mb-4">
             <h3>Description</h3>
             <p>{venue.description}</p>
           </div>
 
-          {/* Adressinformation */}
           <div className="mb-4">
             <h3>Location</h3>
-            <p><strong>Address:</strong> {venue.location.address}</p>
-            <p><strong>City:</strong> {venue.location.city}</p>
-            <p><strong>Zip:</strong> {venue.location.zip}</p>
-            <p><strong>Country:</strong> {venue.location.country}</p>
+            <p><strong>Address:</strong> {venue.location?.address || "N/A"}</p>
+            <p><strong>City:</strong> {venue.location?.city || "N/A"}</p>
+            <p><strong>Zip:</strong> {venue.location?.zip || "N/A"}</p>
+            <p><strong>Country:</strong> {venue.location?.country || "N/A"}</p>
           </div>
 
-          {/* Created and Updated */}
           <div className="mb-4">
             <h3>Dates</h3>
-            <p><strong>Created:</strong> {new Date(venue.created).toLocaleDateString()}</p>
-            <p><strong>Last Updated:</strong> {new Date(venue.updated).toLocaleDateString()}</p>
+            <p><strong>Created:</strong> {venue.created ? new Date(venue.created).toLocaleDateString() : "N/A"}</p>
+            <p><strong>Last Updated:</strong> {venue.updated ? new Date(venue.updated).toLocaleDateString() : "N/A"}</p>
           </div>
         </div>
 
-        {/* Höger sektion (4 kolumner) - Bokningskomponent */}
         <div className="col-md-4">
           <BookingComponent venueId={venue.id} />
         </div>
