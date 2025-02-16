@@ -1,52 +1,52 @@
-import axios from "axios"; // Se till att axios är importerad
+import axios from "axios";
 import { useEffect, useState } from "react";
-import { API_KEY } from "../constants"; // Importera din API-nyckel från constants
-import useUserStore from "../store"; // Zustand store
+import { API_KEY } from "../constants";
+import useUserStore from "../store";
 
 const useUserBookings = () => {
-  const { user, accessToken } = useUserStore(); // Hämta användardata och accessToken från Zustand
+  const { user, accessToken } = useUserStore();
   const [userBookings, setUserBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.name || !accessToken) {
-      console.log("Ingen användare eller accessToken hittades. Avbryter...");
+    if (!user?.email || !accessToken) {
+      console.log("❌ Ingen användare eller accessToken hittades. Avbryter...");
       setLoading(false);
       return;
     }
 
-    // Funktion för att hämta bokningar
     const getBookings = async () => {
       try {
-        // Gör förfrågan med både Authorization header och API-nyckel
-        const response = await axios.get(`https://v2.api.noroff.dev/holidaze/bookings?user=${user.name}`, {
+        const url = `https://v2.api.noroff.dev/holidaze/bookings?userEmail=${user.email}`;
+        console.log("🔎 Fetching bookings from:", url);
+
+        const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "X-Noroff-API-Key": API_KEY, // Lägg till API-nyckeln här
-          }
+            "X-Noroff-API-Key": API_KEY,
+          },
         });
 
-        const bookings = response.data.data || []; // Hämta rätt data och fallback till tom array
-        console.log("Bookings data:", bookings); // Logga bokningsdata för att se strukturen
+        const bookings = response.data.data || [];
+        console.log("✅ Hämtade bokningar:", bookings);
 
-        // Kontrollera om bokningarna är en array innan vi uppdaterar state
         if (Array.isArray(bookings)) {
-          setUserBookings(bookings); // Uppdatera state med de hämtade bokningarna
+          setUserBookings(bookings);
         } else {
-          console.warn("Bookings är inte en array:", bookings);
+          console.warn("⚠️ Bookings är inte en array:", bookings);
         }
-
       } catch (error) {
-        console.error('Error fetching bookings:', error);
+        console.error("❌ Error fetching bookings:", error.response?.data || error.message);
       } finally {
-        setLoading(false); // Sätt loading till false när hämtningen är klar
+        setLoading(false);
       }
     };
 
-    getBookings(); // Hämta bokningar när användare och accessToken är tillgängliga
-  }, [user, accessToken]); // Kör effekten när user eller accessToken ändras
+    getBookings();
+  }, [user, accessToken]);
 
-  return { userBookings, loading }; // Returnera userBookings och loading state
+
+  return { userBookings, loading };
 };
 
 export default useUserBookings;
