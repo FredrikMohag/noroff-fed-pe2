@@ -12,9 +12,9 @@ function Auth() {
   // ✅ Om användaren redan är inloggad, skicka till "/profile"
   React.useEffect(() => {
     if (user) {
-      navigate("/profile");
+      navigate("/profile", { replace: true }); // replace: true hindrar att back-knappen går tillbaka hit
     }
-  }, [user, navigate]);
+  }, [user]);
 
   return (
     <Layout>
