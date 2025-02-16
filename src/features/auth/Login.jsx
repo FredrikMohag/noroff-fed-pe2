@@ -1,13 +1,15 @@
 import { useFormik } from "formik";
-import React from "react";
-import { useDispatch } from 'react-redux';
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import { loginUser } from "./authSlice";
+import { API_AUTH, API_KEY, API_LOGIN, BASE_API_URL } from '../../constants';
+import useUserStore from "../../store"; // Zustand
 
 const Login = () => {
-  const dispatch = useDispatch();
+  const login = useUserStore((state) => state.login); // Få login-funktionen från Zustand
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null); // Ta bort typdefinitionen
 
   // Yup schema för validering
   const validationSchema = Yup.object({
@@ -19,18 +21,64 @@ const Login = () => {
       .required("Password is required"),
   });
 
+  // Formik för formulärhantering
   const formik = useFormik({
     initialValues: { email: "", password: "" },
-    validationSchema, // Lägg till validation schema
+    validationSchema,
     onSubmit: async (values) => {
-      const response = await dispatch(loginUser(values));
-      if (response.meta.requestStatus === "fulfilled") {
-        console.log('Navigating to profile');
-        navigate("/profile"); // Navigera till profil
+      console.log("🔵 Form data before login:", values); // Logga formulärdata
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Skicka inloggningsförfrågan
+        const response = await fetch(
+          `${BASE_API_URL}${API_AUTH}${API_LOGIN}?_holidaze=true`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Noroff-API-Key': API_KEY, // API-nyckel krävs för att autentisera API-anrop
+            },
+            body: JSON.stringify({ email: values.email, password: values.password }),
+          }
+        );
+
+        const result = await response.json();
+        console.log(result);
+
+        if (!response.ok) {
+          setError('Login failed');
+          return;
+        }
+
+        // Här säkerställs att du får access token och användardata
+        const profile = {
+          name: result.data.name,
+          email: result.data.email,
+          avatar: { url: result.data.avatar.url, alt: result.data.avatar.alt },
+          banner: { url: result.data.banner.url, alt: result.data.banner.alt },
+        };
+
+        const accessToken = result.data.accessToken; // Det här är tokenet du behöver
+        console.log('token from useLogin:', accessToken);
+
+        const venueManager = Boolean(result.data.venueManager);
+
+        // Skicka användardata och access token vidare till din authStore
+        login(profile, accessToken, venueManager);
+
+        // Navigera till profilen
+        navigate("/profile");
+
+      } catch (error) {
+        setError(error.message || 'Unknown error');
+        console.error('❌ Error logging in:', error);
+      } finally {
+        setLoading(false);
       }
     },
   });
-
 
   return (
     <form onSubmit={formik.handleSubmit} className="auth-form">
@@ -64,7 +112,11 @@ const Login = () => {
         )}
       </div>
 
-      <button type="submit" className="btn">Log In</button>
+      <button type="submit" className="btn" disabled={loading}>
+        {loading ? 'Logging in...' : 'Log In'}
+      </button>
+
+      {error && <p className="error">{error}</p>}
     </form>
   );
 };

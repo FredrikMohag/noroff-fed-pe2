@@ -1,15 +1,14 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
-import { logout } from "./authSlice";
+import { useNavigate } from "react-router-dom";
+import useUserStore from "../../store"; // Importera Zustand store
 
 const LogoutButton = () => {
-  const dispatch = useDispatch();
-  const history = useHistory();
+  const logout = useUserStore((state) => state.logout);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    dispatch(logout());
-    history.push("/login");
+    logout(); // Rensar Zustand
+    navigate("/login"); // Skicka användaren till login-sidan
   };
 
   return <button onClick={handleLogout}>Logout</button>;
