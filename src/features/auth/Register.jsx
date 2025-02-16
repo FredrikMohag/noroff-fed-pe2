@@ -1,12 +1,12 @@
 import { useFormik } from "formik";
 import React from "react";
-import { useDispatch } from 'react-redux';
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import { registerUser } from '../auth/authSlice';
+import useUserStore from "../../store"; // ✅ Importera Zustand-store
+import authService from "../auth/authService"; // authService för registrering via API
 
 const Register = () => {
-  const dispatch = useDispatch();
+  const login = useUserStore((state) => state.login); // ✅ Zustand login-funktion
   const navigate = useNavigate();
 
   // Yup schema för validering
@@ -28,17 +28,45 @@ const Register = () => {
       email: "",
       password: "",
       avatarUrl: "",
-      isVenueManager: false,
+      venueManager: false,
     },
-    validationSchema, // Lägg till validation schema
+    validationSchema,
     onSubmit: async (values) => {
       try {
-        await dispatch(registerUser(values)).unwrap();
-        navigate("/profile");
+        const requestData = {
+          ...values,
+          venueManager: values.venueManager, // 🔹 Byt namn till det API:t förväntar sig
+        };
+
+        const registerResponse = await authService.register(requestData);
+        console.log("API response after registration:", registerResponse.data);
+        const loginResponse = await authService.login({
+          email: values.email,
+          password: values.password,
+        });
+
+        if (loginResponse.data && loginResponse.data.accessToken) {
+          const userData = loginResponse.data; // Sätt userData här
+          console.log("User logged in:", userData);
+
+          login(loginResponse.data, loginResponse.data.accessToken, loginResponse.data.venueManager);
+
+
+          localStorage.setItem("accessToken", userData.accessToken);
+          localStorage.setItem("venueManager", JSON.stringify(userData.venueManager));
+
+          navigate("/profile");
+        } else {
+          console.warn("Ingen accessToken returnerades vid inloggning!");
+        }
+
       } catch (error) {
-        console.error("Error response:", error.response?.data);
+        console.error("Error during registration/login:", error);
       }
-    },
+    }
+
+
+
   });
 
   return (
@@ -106,8 +134,8 @@ const Register = () => {
       <label>
         <input
           type="checkbox"
-          name="isVenueManager"
-          checked={formik.values.isVenueManager}
+          name="venueManager"
+          checked={formik.values.venueManager}
           onChange={formik.handleChange}
         />
         Register as a venue manager
