@@ -1,48 +1,71 @@
 import { create } from "zustand";
 
-const useUserStore = create((set) => ({
-  user: JSON.parse(localStorage.getItem("user")) || null, // Ladda användardata från localStorage
-  accessToken: localStorage.getItem("accessToken") || null, // Ladda accessToken från localStorage
-  isAuthenticated: false,
-  venueManager: false, // Byt namn från venueManager till venueManager
+const useUserStore = create((set) => {
+  // Ladda användardata och accessToken från localStorage
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const storedAccessToken = localStorage.getItem("accessToken");
 
-  // Login-funktion för att spara både användardata och accessToken
-  login: (userData, accessToken, venueManager) => {
-    const updatedUser = {
-      ...userData,
-      venueManager: venueManager ?? false // Om venueManager inte finns, sätt det till false
-    };
+  // Ladda bokningar från localStorage om de finns
+  const storedBookings = JSON.parse(localStorage.getItem("userBookings")) || [];
 
-    localStorage.setItem("user", JSON.stringify(updatedUser)); // Spara användardata
-    localStorage.setItem("accessToken", accessToken); // Spara accessToken
+  return {
+    user: storedUser || null,
+    accessToken: storedAccessToken || null,
+    isAuthenticated: !!storedUser && !!storedAccessToken,
+    venueManager: storedUser?.venueManager || false, // Hämta från user-objektet
+    userBookings: storedBookings, // Hämta bokningar från localStorage
 
-    set({
-      user: updatedUser,
-      accessToken: accessToken,
-      isAuthenticated: true,
-      venueManager: updatedUser.venueManager, // Sätt venueManager i store
-    });
-  },
+    // Funktion för att lägga till en bokning i state och localStorage
+    addBooking: (booking) => {
+      set((state) => {
+        const newBookings = [...state.userBookings, booking];
+        localStorage.setItem("userBookings", JSON.stringify(newBookings)); // Uppdatera bokningar i localStorage
+        return { userBookings: newBookings };
+      });
+    },
 
-  // Logout-funktion för att ta bort användardata och accessToken
-  logout: () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("venueManager"); // Ta bort venueManager från localStorage
+    // Login-funktion
+    login: (userData, accessToken) => {
+      const updatedUser = { ...userData, venueManager: userData.venueManager ?? false };
 
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      venueManager: false, // Återställ venueManager
-    });
-  },
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      localStorage.setItem("accessToken", accessToken);
 
-  // Funktion för att sätta venueManager flagga
-  setvenueManager: (venueManager) => {
-    localStorage.setItem("venueManager", JSON.stringify(venueManager));
-    set({ venueManager: !!venueManager });
-  },
-}));
+      const storedBookings = JSON.parse(localStorage.getItem("userBookings")) || []; // Hämta bokningar från localStorage
+      set({
+        user: updatedUser,
+        accessToken,
+        isAuthenticated: true,
+        venueManager: updatedUser.venueManager,
+        userBookings: storedBookings, // Sätt de lagrade bokningarna i tillståndet
+      });
+    },
+
+    // Logout-funktion
+    logout: () => {
+      localStorage.removeItem("user");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userBookings"); // Ta bort bokningar från localStorage vid logout
+
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        venueManager: false,
+        userBookings: [], // Töm bokningar vid logout
+      });
+    },
+
+    // Uppdatera venueManager
+    setVenueManager: (venueManager) => {
+      set((state) => {
+        const updatedUser = { ...state.user, venueManager };
+        localStorage.setItem("user", JSON.stringify(updatedUser)); // Uppdatera hela user-objektet i localStorage
+
+        return { user: updatedUser, venueManager };
+      });
+    },
+  };
+});
 
 export default useUserStore;
