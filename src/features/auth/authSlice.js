@@ -8,7 +8,8 @@ const parsedUser = userFromStorage ? JSON.parse(userFromStorage) : null;
 // Initial state för authSlice
 const initialState = {
   user: parsedUser,
-  token: parsedUser?.accessToken || null,
+  accessToken: parsedUser?.accessToken || null,
+  name: parsedUser?.name || null, // Lägg till name i state
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -21,8 +22,15 @@ export const loginUser = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const response = await authService.login(userData);
-      localStorage.setItem("user", JSON.stringify(response.data)); // Spara i localStorage
-      return response.data; // Returnera data till Redux
+
+      // Säkerställ att name finns i datan
+      const updatedUserData = {
+        ...response,
+        name: response.id || response.email, // Fallback till email om id saknas
+      };
+
+      localStorage.setItem("user", JSON.stringify(updatedUserData)); // Spara i localStorage
+      return updatedUserData; // Returnera data till Redux
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       return thunkAPI.rejectWithValue(error.response?.data || "Login failed");
@@ -36,8 +44,15 @@ export const registerUser = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const response = await authService.register(userData);
-      localStorage.setItem("user", JSON.stringify(response.data)); // Spara i localStorage
-      return response.data;
+
+      // Säkerställ att name finns
+      const updatedUserData = {
+        ...response,
+        name: response.id || response.email,
+      };
+
+      localStorage.setItem("user", JSON.stringify(updatedUserData)); // Spara i localStorage
+      return updatedUserData;
     } catch (error) {
       console.error("Register error:", error.response?.data || error.message);
       return thunkAPI.rejectWithValue(
@@ -49,8 +64,7 @@ export const registerUser = createAsyncThunk(
 
 // Async thunk för logout
 export const logoutUser = createAsyncThunk("auth/logout", async () => {
-  authService.logout();
-  localStorage.removeItem("user"); // Rensa användaren från localStorage
+  authService.logout(); // Anropa den nya logout-funktionen här
   return null;
 });
 
@@ -61,7 +75,8 @@ const authSlice = createSlice({
   reducers: {
     manualLogout: (state) => {
       state.user = null;
-      state.token = null;
+      state.accessToken = null;
+      state.name = null; // Se till att name rensas
       localStorage.removeItem("user");
     },
   },
@@ -78,7 +93,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
-        state.token = action.payload.accessToken;
+        state.accessToken = action.payload.accessToken;
+        state.name = action.payload.name; // Spara name i Redux state
         state.message = "Login successful";
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -98,7 +114,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = action.payload;
-        state.token = action.payload.accessToken;
+        state.accessToken = action.payload.accessToken;
+        state.name = action.payload.name;
         state.message = "Registration successful";
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -113,7 +130,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
+        state.name = null;
         state.message = "Logged out successfully";
       });
   },
