@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_HOLIDAZE_URL } from "../constants";
-
-
+import { API_KEY, API_VENUES, BASE_API_URL } from "../constants"; // Importera rätt konstanter
 
 const Venues = () => {
   const [venues, setVenues] = useState([]);
@@ -13,19 +11,25 @@ const Venues = () => {
   useEffect(() => {
     const fetchVenues = async () => {
       try {
-        const response = await fetch(`${API_HOLIDAZE_URL}/venues`);
+        const response = await fetch(`${BASE_API_URL}${API_VENUES}`, {
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+          },
+        });
+
         if (!response.ok) {
-          throw new Error("Failed to fetch venues");
+          throw new Error(`Failed to fetch venues: ${response.statusText}`);
         }
+
         const data = await response.json();
 
         // Sortera baserat på 'created' (senaste först)
         const sortedVenues = data.data.sort((a, b) =>
           new Date(b.created) - new Date(a.created)
         );
-
         setVenues(sortedVenues);
       } catch (err) {
+        console.error("Error fetching venues:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -83,7 +87,6 @@ const Venues = () => {
                       {venue.location?.city || "Unknown City"}, {venue.location?.country || "Unknown Country"}
                     </p>
                     <h5 className="card-title">{venue.name}</h5>
-
                   </div>
                   <div className="mt-auto">
                     <p className="text-primary fw-bold">${venue.price} / night</p>
