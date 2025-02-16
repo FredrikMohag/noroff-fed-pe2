@@ -1,31 +1,26 @@
-import axios from "axios";
-import { API_HOLIDAZE_URL, API_KEY } from "../../constants";
+import { API_KEY, BASE_API_URL } from "../../constants";
 
-export const fetchBookings = async (token, params = {}) => {
+export const fetchBookings = async (accessToken, userName) => {
   try {
-    console.log("Fetching bookings...");
-    console.log("Token:", token);
-    console.log("Params:", params);
+    // Kontrollera att BASE_API_URL och userName används rätt här
+    const url = `${BASE_API_URL}/holidaze/bookings?user=${userName}`;
+    console.log('Fetching bookings from:', url); // Debugging - kollar om URL är korrekt
 
-    const response = await axios.get(`${API_HOLIDAZE_URL}/bookings`, {
+    const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Noroff-API-Key": API_KEY,
+        Authorization: `Bearer ${accessToken}`, // Lägger till accessToken i headers
+        "X-Noroff-API-Key": API_KEY, // Lägger till API_KEY i headers
       },
-      params,
     });
 
-    console.log("API response:", response);
-    console.log("API response data:", response.data);
-
-    if (!response.data || !Array.isArray(response.data.data)) {
-      console.error("API returnerade oväntat format:", response.data);
-      return [];
+    if (!response.ok) {
+      throw new Error("Failed to fetch bookings");
     }
 
-    return response.data.data;
+    const data = await response.json(); // Om svaret är OK, returnera datan
+    return data;
   } catch (error) {
-    console.error("Failed to fetch bookings:", error.response?.data || error.message);
-    return [];
+    console.error("Error fetching bookings:", error); // Felsökning vid error
+    throw error;
   }
 };
