@@ -1,36 +1,40 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import useUserBookings from "../../hooks/useUserBookings";
-import { logoutUser } from "../auth/authSlice";
+import useUserStore from "../../store";
 import BookingCard from "../bookings/BookingCard";
 import { getAvatar, setAvatar } from "./avatarService";
 import CreateVenueForm from "./CreateVenueForm";
 
 const ProfileDetails = () => {
-  console.log("🔵 ProfileDetails komponenten renderas...");
+  console.log("🔵 ProfileDetails component rendered");
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
-  const token = user?.accessToken;
+  const { user, accessToken, logout } = useUserStore();
 
-  console.log("🔹 Användarinfo:", user);
-  console.log("🔹 Token:", token);
+  console.log("🔹 Current user from Zustand:", user);
+  console.log("🔸 Current accessToken from Zustand:", accessToken);
 
-  const [avatar, setAvatarState] = useState(getAvatar() || user?.avatar || null);
+  const [avatar, setAvatarState] = useState(getAvatar() || user?.avatar?.url || null);
   const [activeTab, setActiveTab] = useState("bookings");
   const [showCreateVenue, setShowCreateVenue] = useState(false);
 
-  console.log("📌 Aktiv flik:", activeTab);
-  console.log("🏨 Show Create Venue Modal:", showCreateVenue);
+  const { userBookings, loading } = useUserBookings(accessToken, user, navigate);
 
-  // Använd useUserBookings hook för att hämta bokningar
-  const { userBookings, loading } = useUserBookings(token, user, navigate);
+  useEffect(() => {
+    if (!user) {
+      console.log("🔴 User not found, redirecting to login");
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
-  console.log("📅 Användarens bokningar:", userBookings);
-  console.log("⏳ Laddar bokningar:", loading);
+  // 🔥 Logga och se om filtreringen fungerar som förväntat
+  const filteredBookings = userBookings?.filter(booking => {
+    console.log("Checking booking:", booking.userEmail, "with user email:", user?.email);
+    return booking.userEmail === user?.email;
+  });
+  console.log("✅ Filtered bookings for user:", filteredBookings);
 
   const handleAvatarUpload = (event) => {
     console.log("📸 Ny avatar laddas upp...");
@@ -48,9 +52,9 @@ const ProfileDetails = () => {
   };
 
   const handleLogout = () => {
-    console.log("🚪 Loggar ut användaren...");
-    dispatch(logoutUser());
-    navigate("/profile");
+    console.log("🚪 Logging out user...");
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -79,30 +83,35 @@ const ProfileDetails = () => {
           <div className="user-info">
             <p><strong>Username:</strong> {user?.name || "N/A"}</p>
             <p><strong>Email:</strong> {user?.email || "N/A"}</p>
-            <p><strong>Role:</strong> {user?.isVenueManager ? "Venue Manager" : "Regular User"}</p>
+            <p><strong>Role:</strong> {user?.venueManager ? "Venue Manager" : "Regular User"}</p>
           </div>
         </div>
 
-        {/* Flikar */}
         <div className="profile-tabs">
-          <button onClick={() => setActiveTab("bookings")} className={`profile-tab ${activeTab === "bookings" ? "active" : ""}`}>
+          <button
+            onClick={() => setActiveTab("bookings")}
+            className={`profile-tab ${activeTab === "bookings" ? "active" : ""}`}
+          >
             My Bookings
           </button>
-          {user?.isVenueManager && (
-            <button onClick={() => setActiveTab("venues")} className={`profile-tab ${activeTab === "venues" ? "active" : ""}`}>
+
+          {user?.venueManager && (
+            <button
+              onClick={() => setActiveTab("venues")}
+              className={`profile-tab ${activeTab === "venues" ? "active" : ""}`}
+            >
               My Venues
             </button>
           )}
         </div>
 
-        {/* Innehåll */}
         <div className="profile-content">
           {activeTab === "bookings" ? (
             loading ? (
               <p>Loading bookings...</p>
-            ) : userBookings?.length > 0 ? (
+            ) : filteredBookings?.length > 0 ? ( // ⬅️ Bytt ut userBookings till filteredBookings
               <div className="bookings-container">
-                {userBookings.map((booking) => (
+                {filteredBookings.map((booking) => (
                   <BookingCard key={booking.id} booking={booking} />
                 ))}
               </div>
@@ -110,7 +119,7 @@ const ProfileDetails = () => {
               <p>No bookings yet.</p>
             )
           ) : (
-            user?.isVenueManager && (
+            user?.venueManager && (
               <div>
                 {user?.data?.venues?.length > 0 ? (
                   <ul>
@@ -126,9 +135,8 @@ const ProfileDetails = () => {
           )}
         </div>
 
-        {/* Knappar */}
         <div className="profile-buttons">
-          {user?.isVenueManager && (
+          {user?.venueManager && (
             <button className="btn" onClick={() => setShowCreateVenue(true)}>
               Create Venue
             </button>
