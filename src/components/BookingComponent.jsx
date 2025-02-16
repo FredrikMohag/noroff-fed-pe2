@@ -5,9 +5,9 @@ import { Button, Card, Form, InputGroup, Modal } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { API_HOLIDAZE_URL, API_KEY } from "../constants";
+import { API_BOOKINGS, API_KEY } from "../constants";
+import useStore from "../store"; // Import the Zustand store
 import "../styles/global.scss";
 
 const BookingComponent = ({ venueId }) => {
@@ -21,16 +21,18 @@ const BookingComponent = ({ venueId }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false); // Show success modal
   const vatRate = 0.25;
 
-  const user = useSelector((state) => state.auth.user); // Get user from Redux state
-  const token = user?.accessToken; // Access token for user authentication
+  // Fetch the user data from Zustand store
+  const user = useStore((state) => state.user);
+  const accessToken = user?.accessToken || null;  // Make sure accessToken is correctly retrieved
+
   const navigate = useNavigate();
 
   useEffect(() => {
     console.log(`Fetching venue with ID: ${venueId}`);
     axios
-      .get(`${API_HOLIDAZE_URL}/venues/${venueId}`)
+      .get(`${API_BOOKINGS}/venues/${venueId}`)
       .then((res) => {
-        console.log("Venue data:", res.data);
+
         setVenue(res.data);
         setPricePerNight(res.data.price); // Assuming price is part of venue data
       })
@@ -39,10 +41,9 @@ const BookingComponent = ({ venueId }) => {
       });
   }, [venueId]);
 
-
   const handleBooking = () => {
-    if (!user || !token) {
-      console.log("User or token not found. Redirecting to login.");
+    if (!user || !accessToken) {
+      console.log("User or accessToken not found. Redirecting to login.");
       navigate("/login"); // Redirect to login if not authenticated
       return;
     }
@@ -61,8 +62,8 @@ const BookingComponent = ({ venueId }) => {
   };
 
   const handleConfirmBooking = () => {
-    if (!user || !token) {
-      console.log("User or token not found. Redirecting to login.");
+    if (!user || !accessToken) {
+      console.log("User or accessToken not found. Redirecting to login.");
       navigate("/login"); // Redirect to login if not authenticated
       return;
     }
@@ -75,9 +76,9 @@ const BookingComponent = ({ venueId }) => {
     };
 
     axios
-      .post(`${API_HOLIDAZE_URL}/bookings`, bookingData, {
+      .post(`${API_BOOKINGS}/bookings`, bookingData, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
           "X-Noroff-API-Key": API_KEY,
           "Content-Type": "application/json",
         },
