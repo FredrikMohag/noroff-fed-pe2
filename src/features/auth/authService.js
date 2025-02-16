@@ -1,35 +1,29 @@
 import axios from "axios";
-import { API_BASE_URL, API_KEY } from "../../constants"; // Importera API-nyckeln
+import { API_KEY, BASE_API_URL } from "../../constants";
+import useUserStore from "../../store";
 
-const AUTH_URL = `${API_BASE_URL}/auth`;
+const AUTH_URL = `${BASE_API_URL}/auth`;
 
 const register = async (userData) => {
-  console.log("Sending registration request:", userData);
-
-  const registrationData = {
-    name: userData.name,
-    email: userData.email,
-    password: userData.password,
-    bio: userData.bio || "",
-    venueManager: userData.venueManager || false,
-  };
-
-  if (userData.avatarUrl) {
-    registrationData.avatar = {
-      url: userData.avatarUrl,
-      alt: userData.avatarAlt || "",
-    };
-  }
-
   try {
+    const registrationData = {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      bio: userData.bio || "",
+      venueManager: userData.venueManager || false,
+      avatar: userData.avatarUrl
+        ? { url: userData.avatarUrl, alt: userData.avatarAlt || "" }
+        : undefined,
+    };
+
     const response = await axios.post(`${AUTH_URL}/register`, registrationData, {
       headers: {
         "Content-Type": "application/json",
-        "X-Noroff-API-Key": API_KEY, // Skicka API-nyckeln
+        "X-Noroff-API-Key": API_KEY,
       },
     });
 
-    console.log("Registration response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Registration error:", error.response?.data || error.message);
@@ -37,62 +31,46 @@ const register = async (userData) => {
   }
 };
 
-const login = async (credentials) => {
-  console.log("Sending login request:", credentials);
+const login = async ({ email, password }) => {
   try {
     const response = await axios.post(
-      `${AUTH_URL}/login`,
-      credentials,
+      `${AUTH_URL}/login?_holidaze=true`,
+      { email, password },
       {
         headers: {
           "Content-Type": "application/json",
-          "X-Noroff-API-Key": API_KEY, // API-nyckeln måste skickas
+          "X-Noroff-API-Key": API_KEY,
         },
       }
     );
 
-    console.log("Login response:", response.data);
+    console.log("🔹 Full API response:", response.data); // <-- Logga hela svaret
 
-    if (response.data.accessToken) {
-      // Hämta fullständig användardata efter login
-      const userProfile = await getUserProfile(response.data.accessToken);
+    // Se var accessToken finns i API-svaret
+    const accessToken = response.data.accessToken || response.data?.accessToken || "default-token";
 
-      // Skapa ett objekt som innehåller både token och användardata
-      const userData = { ...response.data, ...userProfile };
+    const profile = response.data.data;
 
-      localStorage.setItem("user", JSON.stringify(userData)); // Spara användaren i localStorage
-
-      return userData;
+    if (!accessToken) {
+      throw new Error("Login failed: No accessToken received.");
     }
+
+    // Spara användaren i Zustand
+    useUserStore.getState().login(profile, accessToken, profile?.venueManager);
+
+
 
     return response.data;
   } catch (error) {
-    console.error("Login error:", error.response?.data || error.message);
+    console.error("🔴 Error logging in:", error.response?.data || error.message);
     throw error;
   }
 };
+
 
 const logout = () => {
   console.log("Logging out user");
-  localStorage.removeItem("user");
+  useUserStore.getState().logout();
 };
 
-const getUserProfile = async (token) => {
-  console.log("Fetching user profile with token:", token);
-  try {
-    const response = await axios.get(`${API_BASE_URL}/profile`, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "X-Noroff-API-Key": API_KEY, // Lägg till API-nyckeln här också
-      },
-    });
-
-    console.log("User profile response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("User profile fetch error:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export default { register, login, logout, getUserProfile };
+export default { register, login, logout };
