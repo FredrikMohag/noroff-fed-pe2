@@ -1,20 +1,25 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import AuthContainer from "../features/auth/AuthContainer";
 import ProfileDetails from "../features/profile/ProfileDetails";
-
+import useUserStore from "../store"; // ✅ Importera Zustand store
 
 function Auth() {
-  // Hämta autentiseringsstatus från Redux store
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const user = useUserStore((state) => state.user); // ✅ Hämta användaren
+  const navigate = useNavigate();
+
+  // ✅ Om användaren redan är inloggad, skicka till "/profile"
+  React.useEffect(() => {
+    if (user) {
+      navigate("/profile");
+    }
+  }, [user, navigate]);
 
   return (
     <Layout>
-
       <div className="background-image" />
-      {isAuthenticated ? <ProfileDetails /> : <AuthContainer />}
-
+      {user ? <ProfileDetails /> : <AuthContainer />}
     </Layout>
   );
 }
