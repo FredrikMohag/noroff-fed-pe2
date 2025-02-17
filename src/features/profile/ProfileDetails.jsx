@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import VenueManager from "../../components/VenueManager"; // ✅ Importera VenueManager
 import useUserBookings from "../../hooks/useUserBookings";
 import useUserStore from "../../store";
 import BookingCard from "../bookings/BookingCard";
@@ -76,7 +77,8 @@ const ProfileDetails = () => {
             <div className="user-info">
               <p><strong>Username:</strong> {user?.name || "N/A"}</p>
               <p><strong>Email:</strong> {user?.email || "N/A"}</p>
-              <p><strong>Role:</strong> {isVenueManager ? "Venue Manager" : "Regular User"}</p>
+              <p><strong>Role:</strong> {user?.isVenueManager ? "Venue Manager" : "Regular User"}</p>
+
             </div>
           </div>
 
@@ -85,11 +87,11 @@ const ProfileDetails = () => {
               My Bookings
             </button>
 
-            {isVenueManager && (
+            <VenueManager>
               <button onClick={() => setActiveTab("venues")} className={`profile-tab ${activeTab === "venues" ? "active" : ""}`}>
                 My Venues
               </button>
-            )}
+            </VenueManager>
           </div>
 
           <div className="profile-content">
@@ -106,7 +108,7 @@ const ProfileDetails = () => {
                 <p>No bookings yet.</p>
               )
             ) : (
-              isVenueManager && (
+              <VenueManager>
                 <div>
                   {user?.data?.venues?.length > 0 ? (
                     <ul>
@@ -118,16 +120,16 @@ const ProfileDetails = () => {
                     <p>No venues yet.</p>
                   )}
                 </div>
-              )
+              </VenueManager>
             )}
           </div>
 
           <div className="profile-buttons">
-            {isVenueManager && (
+            <VenueManager>
               <button className="btn" onClick={() => setShowCreateVenue(true)}>
                 Create Venue
               </button>
-            )}
+            </VenueManager>
             <button className="btn logout" onClick={handleLogout}>
               Log Out
             </button>
