@@ -5,7 +5,7 @@ function VenueDetails() {
   return (
     <Layout>
       <div className="VenueDetails">
-        <VenueFetch /> {/* Rendera den separata komponenten */}
+        <VenueFetch />
       </div>
     </Layout>
   );

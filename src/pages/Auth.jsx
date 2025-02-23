@@ -3,16 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import AuthContainer from "../features/auth/AuthContainer";
 import ProfileDetails from "../features/profile/ProfileDetails";
-import useUserStore from "../store"; // ✅ Importera Zustand store
+import useUserStore from "../store";
 
 function Auth() {
-  const user = useUserStore((state) => state.user); // ✅ Hämta användaren
+  const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
 
-  // ✅ Om användaren redan är inloggad, skicka till "/profile"
   React.useEffect(() => {
     if (user) {
-      navigate("/profile", { replace: true }); // replace: true hindrar att back-knappen går tillbaka hit
+      navigate("/profile", { replace: true });
     }
   }, [user]);
 

@@ -2,14 +2,13 @@ import { useFormik } from "formik";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import useUserStore from "../../store"; // ✅ Importera Zustand-store
-import authService from "../auth/authService"; // authService för registrering via API
+import authService from "../../service/authService";
+import useUserStore from "../../store";
 
 const Register = () => {
-  const login = useUserStore((state) => state.login); // ✅ Zustand login-funktion
+  const login = useUserStore((state) => state.login);
   const navigate = useNavigate();
 
-  // Yup schema för validering
   const validationSchema = Yup.object({
     name: Yup.string().required("Username is required"),
     email: Yup.string()
@@ -35,25 +34,23 @@ const Register = () => {
       try {
         const requestData = {
           ...values,
-          venueManager: values.venueManager, // 🔹 Byt namn till det API:t förväntar sig
+          venueManager: values.venueManager,
         };
 
         const registerResponse = await authService.register(requestData);
-        console.log("API response after registration:", registerResponse.data);
         const loginResponse = await authService.login({
           email: values.email,
           password: values.password,
         });
 
         if (loginResponse.data && loginResponse.data.accessToken) {
-          const userData = loginResponse.data; // Sätt userData här
-          console.log("User logged in:", userData);
+          const userData = loginResponse.data;
 
           login(loginResponse.data, loginResponse.data.accessToken, loginResponse.data.venueManager);
 
-
           localStorage.setItem("accessToken", userData.accessToken);
           localStorage.setItem("venueManager", JSON.stringify(userData.venueManager));
+          localStorage.setItem("avatar", userData.avatarUrl);
 
           navigate("/profile");
         } else {
@@ -64,9 +61,6 @@ const Register = () => {
         console.error("Error during registration/login:", error);
       }
     }
-
-
-
   });
 
   return (

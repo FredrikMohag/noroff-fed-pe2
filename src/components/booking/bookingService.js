@@ -4,6 +4,7 @@ import { API_KEY, BASE_API_URL } from "../../constants";
 export const createBooking = async (accessToken, bookingData) => {
   try {
     const url = `${BASE_API_URL}/holidaze/bookings`;
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -21,7 +22,6 @@ export const createBooking = async (accessToken, bookingData) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error creating booking:", error);
     throw error;
   }
 };

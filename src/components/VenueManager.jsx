@@ -1,14 +1,25 @@
-import React from "react";
-import useUserStore from "../store"; // Importera Zustand store
+import React, { useEffect, useState } from "react";
+import useUserStore from "../store";
 
 const VenueManager = ({ children }) => {
-  const { user } = useUserStore(); // Hämta användaren från Zustand
+  const { user } = useUserStore();
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!user?.isVenueManager) {
-    return null; // Döljer innehållet om användaren INTE är en venue manager
+  useEffect(() => {
+    if (user) {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  return <>{children}</>; // Visar innehållet om användaren ÄR en venue manager
+  if (!user?.isVenueManager) {
+    return null;
+  }
+
+  return <>{children}</>;
 };
 
 export default VenueManager;

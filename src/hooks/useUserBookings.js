@@ -1,42 +1,40 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
-import { API_KEY } from "../constants";
+import { fetchUserBookings } from "../service/bookingService";
 import useUserStore from "../store";
 
+/**
+ * Custom hook to manage user bookings.
+ * It fetches the user's bookings from the API and stores them in the Zustand store.
+ *
+ * @returns {Object} An object containing the user's bookings and the loading state.
+ * @returns {Array} bookings - The list of bookings for the user.
+ * @returns {boolean} loading - A flag indicating whether the bookings are still being fetched.
+ */
 const useUserBookings = () => {
-  const { user, accessToken } = useUserStore();
-  const [userBookings, setUserBookings] = useState([]);
+  const { user, accessToken, setBookings, bookings } = useUserStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.email || !accessToken) {
-      console.log("❌ Ingen användare eller accessToken hittades. Avbryter...");
       setLoading(false);
       return;
     }
 
+    /**
+     * Fetch the user's bookings from the API and update the Zustand store.
+     *
+     * @returns {Promise<void>} Resolves when the bookings have been fetched and stored.
+     */
     const getBookings = async () => {
       try {
-        const url = `https://v2.api.noroff.dev/holidaze/bookings?userEmail=${user.email}`;
-        console.log("🔎 Fetching bookings from:", url);
+        const fetchedBookings = await fetchUserBookings(user.email, accessToken);
+        const validBookings = Array.isArray(fetchedBookings) ? fetchedBookings : [];
 
-        const response = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "X-Noroff-API-Key": API_KEY,
-          },
-        });
-
-        const bookings = response.data.data || [];
-        console.log("✅ Hämtade bokningar:", bookings);
-
-        if (Array.isArray(bookings)) {
-          setUserBookings(bookings);
-        } else {
-          console.warn("⚠️ Bookings är inte en array:", bookings);
+        if (!Array.isArray(fetchedBookings)) {
+          setBookings(validBookings);
         }
       } catch (error) {
-        console.error("❌ Error fetching bookings:", error.response?.data || error.message);
+        console.error("❌ Error fetching bookings:", error.message);
       } finally {
         setLoading(false);
       }
@@ -45,8 +43,7 @@ const useUserBookings = () => {
     getBookings();
   }, [user, accessToken]);
 
-
-  return { userBookings, loading };
+  return { bookings, loading };
 };
 
 export default useUserBookings;

@@ -1,46 +1,96 @@
+import axios from "axios";
+import { differenceInDays } from "date-fns";
 import React, { useEffect, useState } from "react";
 import { Button, Card, Form, InputGroup, Modal } from "react-bootstrap";
 import { FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { createBooking } from "../components/booking/bookingService"; // Importera vår nya service
-import useStore from "../store";
-import "../styles/global.scss";
+import { API_BOOKINGS } from "../constants";
+import { bookVenue } from "../service/bookingService";
+import useUserStore from "../store";
 import CalendarComponent from "./CalendarComponent";
 
+const getDateOnly = (date) => {
+  if (!(date instanceof Date) || isNaN(date)) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
 const BookingComponent = ({ venueId }) => {
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [guests, setGuests] = useState(1);
-  const [pricePerNight, setPricePerNight] = useState(100);
   const [venue, setVenue] = useState(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const vatRate = 0.25;
 
-  const user = useStore((state) => state.user);
-  const accessToken = user?.accessToken || null;
+  const { user, accessToken, bookings, addBooking, setBookings } = useUserStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Här hämtar vi platsens detaljer från API
-    axios
-      .get(`${API_BOOKINGS}/venues/${venueId}`)
-      .then((res) => {
-        setVenue(res.data);
-        setPricePerNight(res.data.price);
-      })
-      .catch((err) => console.error("❌ Error fetching venue:", err));
+    if (!user || !accessToken) return;
+  }, [user, accessToken, navigate]);
+
+  useEffect(() => {
+    const fetchVenue = async () => {
+      try {
+        const response = await axios.get(`${API_BOOKINGS}/venues/${venueId}`);
+        setVenue(response.data);
+      } catch (err) { }
+    };
+
+    if (venueId) {
+      fetchVenue();
+      fetchBookings();
+    }
   }, [venueId]);
 
+  const fetchBookings = async () => {
+    try {
+      const response = await axios.get(`${API_BOOKINGS}/bookings`);
+
+      if (Array.isArray(response.data)) {
+        const venueBookings = response.data.filter(booking => booking.venueId === venueId);
+        useUserStore.getState().setBookings(venueBookings || []);
+      }
+    } catch (err) { }
+  };
+
+  const isDateAvailable = (start, end) => {
+    if (!Array.isArray(bookings)) {
+      return false;
+    }
+
+    const startOnly = getDateOnly(start);
+    const endOnly = getDateOnly(end);
+
+    return !bookings.some((booking) => {
+      const bookedFromOnly = getDateOnly(new Date(booking.dateFrom));
+      const bookedToOnly = getDateOnly(new Date(booking.dateTo));
+      return (
+        (startOnly >= bookedFromOnly && startOnly <= bookedToOnly) ||
+        (endOnly >= bookedFromOnly && endOnly <= bookedToOnly) ||
+        (startOnly <= bookedFromOnly && endOnly >= bookedToOnly)
+      );
+    });
+  };
+
   const handleBooking = () => {
-    console.log("🔹 Handling booking...");
     if (!user || !accessToken) {
       navigate("/login");
       return;
     }
+
+    if (!startDate || !endDate) {
+      alert("Vänligen välj både start- och slutdatum.");
+      return;
+    }
+
+    if (!isDateAvailable(startDate, endDate)) {
+      alert("De valda datumen är redan bokade. Välj andra datum.");
+      return;
+    }
+
     setShowConfirmModal(true);
-    console.log("🔹 Show confirm modal:", showConfirmModal); // Kontrollera om tillståndet ändras
   };
 
   const handleConfirmBooking = async () => {
@@ -59,24 +109,28 @@ const BookingComponent = ({ venueId }) => {
     };
 
     try {
-      const response = await createBooking(accessToken, bookingData);  // Använder vår nya service
-      useStore.getState().addBooking(response.data); // Lägg till bokningen i store
-      setShowConfirmModal(false);  // Stänger bekräftelsemodalen
-      setShowSuccessModal(true);   // Öppnar successmodalen
+      const response = await bookVenue(bookingData, accessToken);
+      addBooking(bookingData);
+      await fetchBookings();
+
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
     } catch (err) {
-      console.error("❌ Bokning misslyckades:", err.response?.data || err.message);
       alert("Bokningen misslyckades, vänligen försök igen.");
     }
   };
 
-  const handleCloseSuccessModal = () => {
-    setShowSuccessModal(false);
-    navigate("/profile");
-  };
+  const nights = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 0) : 0;
+  const pricePerNight = venue?.price || 0;
+  const totalPrice = nights * pricePerNight;
+  const vatAmount = totalPrice * 0.25; // 25% VAT
+  const totalAmount = totalPrice + vatAmount;
 
-  const nights = Math.abs(differenceInDays(startDate, endDate));
-  const vatAmount = (nights * pricePerNight * vatRate).toFixed(2);
-  const totalAmount = (nights * pricePerNight * (1 + vatRate)).toFixed(2);
+  const formatDate = (date) => {
+    return date && date instanceof Date && !isNaN(date)
+      ? date.toLocaleDateString()
+      : "";
+  };
 
   return (
     <Card className="p-4 shadow-sm border-0">
@@ -86,26 +140,17 @@ const BookingComponent = ({ venueId }) => {
         <div className="mb-4">
           <h4>{venue.name}</h4>
           <p>{venue.description}</p>
-          <p><strong>Location:</strong> {venue.location}</p>
         </div>
       )}
 
-      {/* Date picker */}
       <Form.Group className="mb-3">
         <Form.Label>Select dates</Form.Label>
         <InputGroup>
           <InputGroup.Text>
-            <FaCalendarAlt
-              style={{ cursor: "pointer" }}
-              onClick={() => setCalendarVisible(!calendarVisible)}
-            />
+            <FaCalendarAlt onClick={() => setCalendarVisible(!calendarVisible)} />
           </InputGroup.Text>
-          <Form.Control
-            readOnly
-            value={startDate && endDate ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}` : "Select date"}
-          />
+          <Form.Control readOnly value={`${formatDate(startDate)} - ${formatDate(endDate)}`} />
         </InputGroup>
-
         {calendarVisible && (
           <CalendarComponent
             venueId={venueId}
@@ -117,7 +162,6 @@ const BookingComponent = ({ venueId }) => {
         )}
       </Form.Group>
 
-      {/* Number of guests input */}
       <Form.Group className="mb-3">
         <Form.Label>Number of Guests</Form.Label>
         <Form.Control
@@ -129,57 +173,35 @@ const BookingComponent = ({ venueId }) => {
         />
       </Form.Group>
 
-      {/* Price and VAT summary */}
       <div className="d-flex justify-content-between">
         <p className="mb-1">Nights</p>
         <p className="mb-1">{nights}</p>
       </div>
+
       <div className="d-flex justify-content-between">
         <p className="mb-1">VAT (25%)</p>
-        <p className="mb-1">${vatAmount}</p>
+        <p className="mb-1">${vatAmount.toFixed(2)}</p>
       </div>
       <div className="d-flex justify-content-between">
         <h4>Total</h4>
-        <h4>${totalAmount}</h4>
+        <h4>${totalAmount.toFixed(2)}</h4>
       </div>
 
-      {/* Booking Button */}
       <Button variant="primary" className="mt-3 w-100" onClick={handleBooking}>
         {user ? "Book" : "Log in"}
       </Button>
 
-      {/* Confirmation Modal */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Booking</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            Please confirm your booking at {venue?.name} for {guests} guest{guests > 1 ? 's' : ''} from {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}.
-          </p>
+          Bekräfta din bokning på {venue?.name} för {guests} gäster från{" "}
+          {formatDate(startDate)} till {formatDate(endDate)}.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
-            Cancel booking
-          </Button>
-          <Button variant="primary" onClick={handleConfirmBooking}>
-            Book now
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Success Modal */}
-      <Modal show={showSuccessModal} onHide={handleCloseSuccessModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Booking Success</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Your booking at {venue?.name} has been successfully confirmed for {guests} guest{guests > 1 ? 's' : ''} from {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}.</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={handleCloseSuccessModal}>
-            Go to Profile
-          </Button>
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>Avbryt</Button>
+          <Button variant="primary" onClick={handleConfirmBooking}>Boka nu</Button>
         </Modal.Footer>
       </Modal>
     </Card>

@@ -1,110 +1,98 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { API_KEY, API_VENUES, BASE_API_URL } from "../constants"; // Importera rätt konstanter
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import DeleteVenueModal from "../features/profile/DeleteVenueModal";
+import { fetchBookingsForVenue } from "../service/bookingService"; // Importera funktionen för att hämta bokningar
+import { deleteVenue } from "../service/venueService"; // Importera deleteVenue från tjänsten
 
-const Venues = () => {
-  const [venues, setVenues] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
+const VenueCard = ({ venue, accessToken, onDelete }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookingsCount, setBookingsCount] = useState(0);
 
   useEffect(() => {
-    const fetchVenues = async () => {
+    // Hämta bokningar för venue
+    const fetchBookings = async () => {
       try {
-        const response = await fetch(`${BASE_API_URL}${API_VENUES}`, {
-          headers: {
-            "Authorization": `Bearer ${API_KEY}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch venues: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Sortera baserat på 'created' (senaste först)
-        const sortedVenues = data.data.sort((a, b) =>
-          new Date(b.created) - new Date(a.created)
-        );
-        setVenues(sortedVenues);
-      } catch (err) {
-        console.error("Error fetching venues:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        const count = await fetchBookingsForVenue(venue.id, accessToken); // Hämta antalet bokningar
+        setBookingsCount(count);
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
       }
     };
 
-    fetchVenues();
-  }, []);
+    fetchBookings();
+  }, [venue.id, accessToken]); // Effektens beroenden: när venue.id eller accessToken ändras
 
-  if (loading) return <div className="text-center mt-5">Loading...</div>;
-  if (error) return <div className="text-danger text-center mt-5">Error: {error}</div>;
+  if (!venue) {
+    console.error("❌ Venue is missing!");
+    return <p>Error: Venue not found</p>;
+  }
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true); // Visa modalen när Delete knappen trycks
+  };
+
+  const handleCancel = () => {
+    setShowDeleteModal(false); // Stäng modalen när användaren klickar på Avbryt
+  };
+
+  const handleDelete = async (venueId) => {
+    try {
+      const success = await deleteVenue(venueId); // Anropa deleteVenue från venueService
+      if (success) {
+        setShowDeleteModal(false); // Stäng modalen om borttagning lyckades
+        onDelete(venueId); // Uppdatera föräldern (om du behöver det, t.ex. för att ta bort venue från listan)
+      }
+    } catch (error) {
+      console.error("Error deleting venue:", error);
+    }
+  };
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-center mb-4">All Venues</h2>
-      <div className="row">
-        {venues.map((venue) => {
-          const hasImage = venue.media?.[0]?.url;
-
-          return (
-            <div key={venue.id} className="col-md-4 mb-4">
-              <div className="card shadow-sm h-100">
-                {/* Bild */}
-                <div
-                  className="card-img-top"
-                  style={{
-                    height: "200px",
-                    backgroundColor: hasImage ? "transparent" : "#ccc",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "#fff",
-                    fontSize: "16px",
-                    textAlign: "center",
-                  }}
-                >
-                  {!hasImage ? (
-                    "No image available"
-                  ) : (
-                    <img
-                      src={venue.media[0].url}
-                      alt={venue.media[0]?.alt || "No image available"}
-                      style={{
-                        height: "100%",
-                        width: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div className="card-body d-flex flex-column">
-                  <div className="mb-3">
-                    <p className="mb-1 text-muted">
-                      {venue.location?.city || "Unknown City"}, {venue.location?.country || "Unknown Country"}
-                    </p>
-                    <h5 className="card-title">{venue.name}</h5>
-                  </div>
-                  <div className="mt-auto">
-                    <p className="text-primary fw-bold">${venue.price} / night</p>
-                    <button
-                      className="btn btn-outline-primary w-100"
-                      onClick={() => navigate(`/venues/${venue.id}`)}
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+    <div className="venue-card">
+      <div className="venue-image">
+        {venue.media && venue.media.length > 0 ? (
+          <img src={venue.media[0].url} alt={venue.media[0].alt || venue.name} />
+        ) : (
+          <div className="placeholder-image">No Image Available</div>
+        )}
       </div>
+
+      <div className="venue-card-content">
+        {/* Venue name added here */}
+        <h3>{venue.name}</h3>
+
+        <div className="actions">
+          <Link to={`/venues/${venue.id}`} className="view-details">
+            View details
+          </Link>
+        </div>
+
+        <div className="booking-status">
+          {/* Booked status and number of bookings */}
+          <p><strong>Booked:</strong> {bookingsCount} times</p>
+        </div>
+
+        <div className="actions-bottom">
+          {/* Update Venue Link */}
+          <Link to={`/venues/edit/${venue.id}`} className="update-venue button">
+            Update Venue
+          </Link>
+          <button onClick={handleDeleteClick} className="delete-venue button">
+            Delete Venue
+          </button>
+        </div>
+      </div>
+
+      {/* Visa DeleteModal om showDeleteModal är true */}
+      {showDeleteModal && (
+        <DeleteVenueModal
+          venueId={venue.id}
+          onDelete={handleDelete}
+          onCancel={handleCancel}
+        />
+      )}
     </div>
   );
 };
 
-export default Venues;
+export default VenueCard;

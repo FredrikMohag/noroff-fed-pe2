@@ -11,6 +11,8 @@ const VenueFetch = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log("🔹 Fetching venue details for ID:", id);  // Log for tracking fetch process
+
     const fetchVenue = async () => {
       try {
         const response = await fetch(`${BASE_API_URL}${API_VENUES}/${id}`, {
@@ -25,12 +27,14 @@ const VenueFetch = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched Venue Data:", data); // Debugging
+        console.log("🎟️ Fetched Venue Data:", data); // Debugging
 
         setVenue(data.data || data);
       } catch (err) {
+        console.error("❌ Error fetching venue details:", err.message); // Error logging
         setError(err.message);
       } finally {
+        console.log("✅ Finished fetching venue details.");
         setLoading(false);
       }
     };
@@ -38,16 +42,35 @@ const VenueFetch = () => {
     fetchVenue();
   }, [id]);
 
-  if (loading) return <div className="text-center mt-5">Loading...</div>;
-  if (error) return <div className="text-danger text-center mt-5">Error: {error}</div>;
-  if (!venue) return <div className="text-center mt-5">No details available</div>;
+  // Logging each state change
+  useEffect(() => {
+    console.log("🔸 Loading state changed:", loading);
+    console.log("🔸 Error state changed:", error);
+    console.log("🔸 Venue state changed:", venue);
+  }, [loading, error, venue]);
+
+  if (loading) {
+    console.log("🔵 Loading the venue...");  // Loading state log
+    return <div className="text-center mt-5">Loading...</div>;
+  }
+  if (error) {
+    console.error("⚠️ Error encountered while loading venue:", error);  // Error log
+    return <div className="text-danger text-center mt-5">Error: {error}</div>;
+  }
+  if (!venue) {
+    console.log("⚠️ No venue details available!");  // Empty venue log
+    return <div className="text-center mt-5">No details available</div>;
+  }
 
   const renderStars = (rating) => {
+    console.log("⭐ Rendering stars for rating:", rating);  // Log for rendering stars
     const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#f39c12", "#2ecc71"];
     return Array.from({ length: 5 }, (_, i) => (
       <FaStar key={i} style={{ color: i < rating ? colors[i] : "#ccc", marginRight: "5px" }} />
     ));
   };
+
+  console.log("🎟️ Venue Data:", venue);  // Log full venue data for inspection
 
   return (
     <div className="container mt-5">

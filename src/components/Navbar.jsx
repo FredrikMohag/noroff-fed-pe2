@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import useUserStore from "../store"; // Importera Zustand-store
+import useUserStore from "../store";
 
 function Navbar() {
-  const user = useUserStore((state) => state.user); // Hämta user från Zustand
+  const user = useUserStore((state) => state.user);
 
   return (
     <nav className="navbar">
