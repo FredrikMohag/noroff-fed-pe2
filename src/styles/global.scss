@@ -2,6 +2,7 @@
 @use './components/Navbar' as *;
 @use './components/SearchBar' as *;
 @use './components/Profile' as *;
+@use './components/bookingCard' as *;
 
 @import url('https://fonts.googleapis.com/css2?family=Caveat&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
@@ -56,4 +57,53 @@ a {
   padding: 20px;
   position: relative;
   z-index: 1;
+}
+
+.react-datepicker__day--highlighted {
+  background-color: #f2f2f2;
+  color: #aaa;
+}
+
+.react-datepicker__day--highlighted:hover {
+  background-color: #ccc;
+}
+
+.actions-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.update-venue,
+.delete-venue {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 5px;
+  border: none;
+  transition: background-color 0.3s;
+  flex: 1;
+}
+
+button:hover,
+.button:hover {
+  background-color: #0056b3;
+}
+
+.delete-venue {
+  background-color: #dc3545;
+}
+
+.delete-venue:hover {
+  background-color: #c82333;
+}
+
+.update-venue {
+  background-color: #28a745;
+}
+
+.update-venue:hover {
+  background-color: #218838;
 }

@@ -1,7 +1,6 @@
 .navbar {
   display: flex;
   justify-content: space-between;
-  /* Sprid ut innehållet */
   align-items: center;
   padding: 10px 50px;
   background-color: #fff;
@@ -10,7 +9,6 @@
 .navbar-container {
   display: flex;
   justify-content: space-between;
-  /* Loggan till vänster, länkar till höger */
   align-items: center;
   width: 100%;
 }
@@ -22,7 +20,6 @@
 
 .logo {
   height: 50px;
-  /* Anpassa storleken på loggan */
   width: auto;
 }
 

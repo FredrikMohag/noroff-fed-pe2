@@ -1,0 +1,116 @@
+.booking-card,
+.venue-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  margin-bottom: 20px;
+
+  .venue-image {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .placeholder-image {
+    width: 100%;
+    height: 200px;
+    background: #ccc;
+    color: #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .booking-card-content,
+  .venue-card-content {
+    padding: 16px;
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+
+      .view-details {
+        text-decoration: none;
+        font-weight: bold;
+        color: #007bff;
+      }
+
+      .delete-button {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.3s ease;
+
+        &:hover {
+          background: #c0392b;
+        }
+      }
+    }
+
+    .booking-dates {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+
+      .date-card {
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 6px;
+        text-align: center;
+        min-width: 80px;
+      }
+
+      .date-divider {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+      }
+    }
+
+    .booking-info {
+
+      .customer-info,
+      .venue-info {
+        padding: 8px 0;
+        font-size: 14px;
+
+        p {
+          margin: 4px 0;
+        }
+
+        strong {
+          font-weight: bold;
+          color: #333;
+        }
+      }
+    }
+  }
+}
+
+.venues-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
