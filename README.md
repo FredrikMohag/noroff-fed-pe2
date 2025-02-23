@@ -1,4 +1,5 @@
 # Project Exam 2
+<img width="420" alt="Skärmavbild 2025-02-23 kl  23 56 03" src="https://github.com/user-attachments/assets/6d58c420-ca22-40dd-b119-2a4532784018" />
 
 ** Project Goal**
 
